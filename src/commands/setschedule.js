@@ -39,11 +39,11 @@ export async function setschedule(bot, msg) {
 
     // ✅ Отправляем сообщение всем пользователям
     const users = await User.find({});
-    const text = `📅 Оновлено графік відключень!\n🕒 ${now}\nПосилання на графік: ${status.scheduleImage}`;
+    const caption = `📅 Оновлено графік відключень!\n🕒 ${now}`;
 
     for (const user of users) {
         try {
-            await bot.sendMessage(user.chatId, text);
+            await bot.sendPhoto(user.chatId, status.scheduleImage, { caption });
         } catch (e) {
             // пользователь мог заблокировать бота — игнорируем
         }
