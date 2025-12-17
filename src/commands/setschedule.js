@@ -1,6 +1,7 @@
 import cloudinary from '../../config.js';
 import { isAdmin } from '../utils/isAdmin.js';
 import { Status } from '../models/Status.js';
+import { formatKiev } from '../utils/formatKiev.js';
 
 export async function setschedule(bot, msg) {
     if (!isAdmin(msg)) {
@@ -29,7 +30,7 @@ export async function setschedule(bot, msg) {
     if (!status) status = new Status({ name: 'ЖК' });
 
     status.scheduleImage = upload.secure_url;
-    status.updated = new Date().toLocaleString();
+    status.updated = formatKiev();
     await status.save();
 
     await bot.sendMessage(msg.chat.id, '✅ Графік оновлено.');

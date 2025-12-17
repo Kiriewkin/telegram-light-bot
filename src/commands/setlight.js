@@ -1,6 +1,7 @@
 import { isAdmin } from '../utils/isAdmin.js';
 import { Status } from '../models/Status.js';
 import { User } from '../models/User.js';
+import { formatKiev } from '../utils/formatKiev.js';
 
 export async function setlight(bot, msg, match) {
     if (!isAdmin(msg)) {
@@ -17,19 +18,21 @@ export async function setlight(bot, msg, match) {
         status = new Status({ name: 'ЖК' });
     }
 
+    const now = formatKiev();
+
     if (mode === 'on') {
         status.light = true;
-        status.last_change = new Date().toLocaleString();
+        status.last_change = now;
         status.restore_time = '—';
     }
 
     if (mode === 'off') {
         status.light = false;
-        status.last_change = new Date().toLocaleString();
+        status.last_change = now;
         status.restore_time = args[1] || 'невідомо';
     }
 
-    status.updated = new Date().toLocaleString();
+    status.updated = now;
     await status.save();
 
     const text = status.light
