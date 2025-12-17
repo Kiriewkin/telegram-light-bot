@@ -1,6 +1,7 @@
 import cloudinary from '../../config.js';
 import { isAdmin } from '../utils/isAdmin.js';
 import { Status } from '../models/Status.js';
+import { User } from '../models/User.js';
 import { formatKiev } from '../utils/formatKiev.js';
 
 export async function setschedule(bot, msg) {
@@ -29,9 +30,24 @@ export async function setschedule(bot, msg) {
     let status = await Status.findOne();
     if (!status) status = new Status({ name: 'ЖК' });
 
+    const now = formatKiev();
+
     status.scheduleImage = upload.secure_url;
-    status.updated = formatKiev();
+    status.updated = now;
+    status.last_change = now;
     await status.save();
 
-    await bot.sendMessage(msg.chat.id, '✅ Графік оновлено.');
+    // ✅ Отправляем сообщение всем пользователям
+    const users = await User.find({});
+    const text = `📅 Оновлено графік відключень!\n🕒 ${now}\nПосилання на графік: ${status.scheduleImage}`;
+
+    for (const user of users) {
+        try {
+            await bot.sendMessage(user.chatId, text);
+        } catch (e) {
+            // пользователь мог заблокировать бота — игнорируем
+        }
+    }
+
+    await bot.sendMessage(msg.chat.id, '✅ Графік оновлено та розіслано користувачам.');
 }
