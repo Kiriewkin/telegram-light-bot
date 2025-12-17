@@ -60,12 +60,20 @@ bot.on('message', async (msg) => {
     if (!msg.text) return;
 
     const text = msg.text.trim();
-    const command = text.split(' ')[0].split('@')[0];
 
-    if (allowedTexts.includes(command)) return;
+    // 🔹 Если это slash-команда
+    if (text.startsWith('/')) {
+        const command = text.split(' ')[0].split('@')[0];
 
-    // админ-команды
-    if (command.startsWith('/set')) return;
+        if (allowedTexts.includes(command)) return;
+
+        // админ-команды
+        if (command.startsWith('/set')) return;
+        if (command === '/message') return;
+    }
+
+    // 🔹 Если это кнопка (обычный текст)
+    if (allowedTexts.includes(text)) return;
 
     await bot.sendMessage(
         msg.chat.id,
@@ -79,6 +87,7 @@ bot.on('message', async (msg) => {
         mainKeyboard
     );
 });
+
 
 const app = express();
 const PORT = 3000;
