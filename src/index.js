@@ -1,6 +1,7 @@
 import TelegramBot from 'node-telegram-bot-api';
+import express from 'express';
 
-import { TOKEN } from '../config.js';
+import { DOMEN_RAILWAY, TOKEN } from '../config.js';
 import { connectToDatabase } from './db/index.js';
 import { light, schedule, setlight, setschedule } from './commands/index.js'
 import { addUser } from './utils/users.js';
@@ -74,3 +75,17 @@ bot.on('message', async (msg) => {
         mainKeyboard
     );
 });
+
+const app = express();
+const PORT = 3000;
+
+app.get('/', (req, res) => res.send('Bot is alive! 🌟'));
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// --- Самопинг каждые 15 минут ---
+setInterval(() => {
+    fetch(DOMEN_RAILWAY)
+        .then(res => console.log('Pinged self, status:', res.status))
+        .catch(err => console.log('Ping error:', err));
+}, 15 * 60 * 1000);

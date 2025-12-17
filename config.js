@@ -23,6 +23,7 @@ export const MONGO_URI = process.env.MONGO_URI;
 export const TOKEN = process.env.TOKEN;
 export const ADMIN_ID = process.env.ADMIN_ID;
 export const PORT = process.env.PORT || 4500;
+export const DOMEN_RAILWAY = process.env.DOMEN_RAILWAY;
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
