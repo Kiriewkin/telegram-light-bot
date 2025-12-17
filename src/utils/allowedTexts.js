@@ -3,5 +3,6 @@ export const allowedTexts = [
     '/light',
     '/schedule',
     '💡 Світло',
-    '📅 Графік'
+    '📅 Графік',
+    '/message'
 ];

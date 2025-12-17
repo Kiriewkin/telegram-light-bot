@@ -3,7 +3,7 @@ import express from 'express';
 
 import { DOMEN_RAILWAY, TOKEN } from '../config.js';
 import { connectToDatabase } from './db/index.js';
-import { light, schedule, setlight, setschedule } from './commands/index.js'
+import { light, schedule, setlight, setschedule, sendMessage } from './commands/index.js'
 import { addUser } from './utils/users.js';
 import { Status } from './models/Status.js';
 import { allowedTexts } from './utils/allowedTexts.js';
@@ -52,11 +52,15 @@ bot.on('photo', (msg) => {
     }
 });
 
+bot.onText(/\/message (.+)/, (msg, match) => {
+    sendMessage(bot, msg, match);
+});
+
 bot.on('message', async (msg) => {
     if (!msg.text) return;
 
     const text = msg.text.trim();
-    const command = text.split('@')[0];
+    const command = text.split(' ')[0].split('@')[0];
 
     if (allowedTexts.includes(command)) return;
 
