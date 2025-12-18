@@ -39,6 +39,6 @@ export async function setRestore(bot, msg, match) {
 
     await bot.sendMessage(
         msg.chat.id,
-        `✅ Повідомлення надіслано\n👥 ${formatBroadcastResult(result)}`
+        `✅ Повідомлення надіслано\n ${formatBroadcastResult(result)}`
     );
 }

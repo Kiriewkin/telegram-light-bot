@@ -4,7 +4,8 @@ export const allowedTexts = [
     '/schedule',
     '💡 Світло',
     '📅 Графік',
-    '/message'
+    '/message',
+    '/restore'
 ];
 
 export const startText = (name) => `
