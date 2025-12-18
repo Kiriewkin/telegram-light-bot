@@ -5,7 +5,7 @@ import { broadcast } from '../../utils/broadcast.js';
 import { formatBroadcastResult } from '../../helpers/formatBroadcastResult.js';
 
 export async function setRestore(bot, msg, match) {
-    if (!isAdmin(msg)) {
+    if (!(await isAdmin(msg.from.id))) {
         await bot.sendMessage(msg.chat.id, '⛔ У вас нет доступа.');
         return;
     }

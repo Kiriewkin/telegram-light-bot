@@ -5,22 +5,34 @@ import { broadcast } from '../../utils/broadcast.js';
 import { formatBroadcastResult } from '../../helpers/formatBroadcastResult.js';
 
 export async function setlight(bot, msg, match) {
-    if (!isAdmin(msg)) {
+    if (!(await isAdmin(msg.from.id))) {
         await bot.sendMessage(msg.chat.id, '⛔ У вас нет доступа.');
         return;
     }
 
     const args = match[1]?.split(' ') || [];
     const mode = args[0];
+    const reason = args.slice(1).join(' ');
 
     let status = await Status.findOne();
-
     if (!status) {
         status = new Status({ name: 'ЖК' });
     }
 
     const now = formatKiev();
 
+    // 🔑 перевірка дублювання
+    if (mode === 'on' && status.light === true) {
+        await bot.sendMessage(msg.chat.id, '⚠️ Світло вже увімкнено, стан не змінено.');
+        return;
+    }
+
+    if (mode === 'off' && status.light === false) {
+        await bot.sendMessage(msg.chat.id, '⚠️ Світло вже вимкнено, стан не змінено.');
+        return;
+    }
+
+    // якщо стан змінюється
     if (mode === 'on') {
         status.light = true;
         status.last_change = now;
@@ -30,17 +42,19 @@ export async function setlight(bot, msg, match) {
     if (mode === 'off') {
         status.light = false;
         status.last_change = now;
-        status.restore_time = args[1] || 'невідомо';
+        status.restore_time = reason || 'невідомо';
     }
 
     status.updated = now;
     await status.save();
 
+    const adminName = msg.from.first_name || msg.from.username || 'Адмін';
+
     const text = status.light
-        ? `✅ Світло зʼявилось\n\n🕒 ${status.last_change}`
-        : `❌ Світла нема з ${status.last_change}\n\n⚡️ Орієнтовне відновлення: ${status.restore_time}`;
+        ? `✅ Світло зʼявилось\n\n🕒 ${status.last_change}\n👤 Змінив: ${adminName}`
+        : `❌ Світла нема з ${status.last_change}\n\n⚡️ Орієнтовне відновлення: ${status.restore_time}\n👤 Змінив: ${adminName}`;
 
     const result = await broadcast(bot, msg.chat.id, text);
 
-    await bot.sendMessage(msg.chat.id,`✅ Повідомлення надіслано\n ${formatBroadcastResult(result)}`);
+    await bot.sendMessage(msg.chat.id, `✅ Повідомлення надіслано\n ${formatBroadcastResult(result)}`);
 }

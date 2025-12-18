@@ -6,7 +6,7 @@ import { broadcastPhoto } from '../../utils/broadcastPhoto.js';
 import { formatBroadcastResult } from '../../helpers/formatBroadcastResult.js';
 
 export async function setschedule(bot, msg) {
-    if (!isAdmin(msg)) {
+    if (!(await isAdmin(msg.from.id))) {
         await bot.sendMessage(msg.chat.id, '⛔ Немає доступу');
         return;
     }

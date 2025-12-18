@@ -4,7 +4,6 @@ dotenv.config();
 const requiredEnv = [
     'TOKEN',
     'MONGO_URI',
-    'ADMIN_ID',
     'CLOUDINARY_CLOUD_NAME',
     'CLOUDINARY_API_KEY',
     'CLOUDINARY_API_SECRET',
@@ -21,9 +20,9 @@ import { v2 as cloudinary } from 'cloudinary';
 export const DB_NAME = process.env.DB_NAME;
 export const MONGO_URI = process.env.MONGO_URI;
 export const TOKEN = process.env.TOKEN;
-export const ADMIN_ID = process.env.ADMIN_ID;
 export const PORT = process.env.PORT || 4500;
 export const DOMEN_RAILWAY = process.env.DOMEN_RAILWAY;
+export const APP_MODE = process.env.APP_MODE
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
