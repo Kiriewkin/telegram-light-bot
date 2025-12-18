@@ -3,7 +3,7 @@ import { User } from '../models/User.js';
 
 export async function sendMessage(bot, msg, match) {
     // 🔐 Проверка админа
-    if (!isAdmin(msg)) {
+    if (!(await isAdmin(msg.from.id))) {
         await bot.sendMessage(msg.chat.id, '⛔ У вас немає доступу.');
         return;
     }
@@ -18,15 +18,20 @@ export async function sendMessage(bot, msg, match) {
         return;
     }
 
+    const adminName = msg.from.first_name || msg.from.username || 'Адмін';
+
     const users = await User.find({});
     let success = 0;
 
     for (const user of users) {
         try {
-            await bot.sendMessage(user.chatId, text);
+            await bot.sendMessage(
+                user.chatId,
+                `${text}\n\n👤 Повідомлення від: ${adminName}`
+            );
             success++;
         } catch (e) {
-            // пользователь мог заблокировать бота — игнорируем
+            // користувач міг заблокувати бота — ігноруємо
         }
     }
 
