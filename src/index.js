@@ -3,7 +3,7 @@ import express from 'express';
 
 import { DOMEN_RAILWAY, TOKEN } from '../config.js';
 import { connectToDatabase } from './db/index.js';
-import { light, schedule, setlight, setschedule, sendMessage } from './commands/index.js'
+import { light, schedule, setlight, setschedule, sendMessage, setRestore } from './commands/index.js'
 import { addUser } from './utils/users.js';
 import { Status } from './models/Status.js';
 import { allowedTexts, fallbackText, startText } from './utils/Texts.js';
