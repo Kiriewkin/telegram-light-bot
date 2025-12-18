@@ -1,7 +1,8 @@
-import { isAdmin } from '../utils/isAdmin.js';
-import { Status } from '../models/Status.js';
-import { User } from '../models/User.js';
-import { formatKiev } from '../utils/formatKiev.js';
+import { isAdmin } from '../../utils/isAdmin.js';
+import { Status } from '../../models/Status.js';
+import { formatKiev } from '../../utils/formatKiev.js';
+import { broadcast } from '../../utils/broadcast.js';
+import { formatBroadcastResult } from '../../helpers/formatBroadcastResult.js';
 
 export async function setlight(bot, msg, match) {
     if (!isAdmin(msg)) {
@@ -39,15 +40,7 @@ export async function setlight(bot, msg, match) {
         ? `✅ Світло зʼявилось\n\n🕒 ${status.last_change}`
         : `❌ Світла нема з ${status.last_change}\n\n⚡️ Орієнтовне відновлення: ${status.restore_time}`;
 
-    const users = await User.find({});
+    const result = await broadcast(bot, msg.chat.id, text);
 
-    for (const user of users) {
-        try {
-            await bot.sendMessage(user.chatId, text);
-        } catch (e) {
-            // пользователь мог заблокировать бота — игнорируем
-        }
-    }
-
-    await bot.sendMessage(msg.chat.id, '✅ Статус оновлено та розіслано.');
+    await bot.sendMessage(msg.chat.id,`✅ Повідомлення надіслано\n ${formatBroadcastResult(result)}`);
 }

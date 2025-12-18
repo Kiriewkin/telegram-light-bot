@@ -1,8 +1,9 @@
-import cloudinary from '../../config.js';
-import { isAdmin } from '../utils/isAdmin.js';
-import { Status } from '../models/Status.js';
-import { User } from '../models/User.js';
-import { formatKiev } from '../utils/formatKiev.js';
+import cloudinary from '../../../config.js';
+import { isAdmin } from '../../utils/isAdmin.js';
+import { Status } from '../../models/Status.js';
+import { formatKiev } from '../../utils/formatKiev.js';
+import { broadcastPhoto } from '../../utils/broadcastPhoto.js';
+import { formatBroadcastResult } from '../../helpers/formatBroadcastResult.js';
 
 export async function setschedule(bot, msg) {
     if (!isAdmin(msg)) {
@@ -38,16 +39,13 @@ export async function setschedule(bot, msg) {
     await status.save();
 
     // ✅ Отправляем сообщение всем пользователям
-    const users = await User.find({});
     const caption = `📅 Оновлено графік відключень!\n🕒 ${now}`;
+    const result = await broadcastPhoto(
+        bot,
+        msg.chat.id,
+        status.scheduleImage,
+        caption
+    );
 
-    for (const user of users) {
-        try {
-            await bot.sendPhoto(user.chatId, status.scheduleImage, { caption });
-        } catch (e) {
-            // пользователь мог заблокировать бота — игнорируем
-        }
-    }
-
-    await bot.sendMessage(msg.chat.id, '✅ Графік оновлено та розіслано користувачам.');
+    await bot.sendMessage(msg.chat.id, formatBroadcastResult(result));
 }
