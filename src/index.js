@@ -6,7 +6,7 @@ import { connectToDatabase } from './db/index.js';
 import { light, schedule, setlight, setschedule, sendMessage } from './commands/index.js'
 import { addUser } from './utils/users.js';
 import { Status } from './models/Status.js';
-import { allowedTexts } from './utils/allowedTexts.js';
+import { allowedTexts, fallbackText, startText } from './utils/Texts.js';
 import { mainKeyboard } from './utils/keyboard.js';
 
 const bot = new TelegramBot(TOKEN, { polling: true });
@@ -28,34 +28,36 @@ bot.onText(/\/start/, async (msg) => {
 
     await bot.sendMessage(
         msg.chat.id,
-        `Привіт! Я бот, який показує, чи є світло у ЖК «${status.name}».
-
-Доступні команди:
-• /light — перевірити, чи є світло
-• /schedule — переглянути графік відключень
-
-Або скористайтесь кнопками нижче ⬇️`,
+        startText(status.name),
         mainKeyboard
     );
 
 });
-
 
 bot.onText(/\/light|💡 Світло/i, (msg) => light(bot, msg));
 bot.onText(/\/schedule|📅 Графік/i, (msg) => schedule(bot, msg));
 bot.onText(/\/setlight (.+)/, (msg, match) => {
     setlight(bot, msg, match);
 });
+
+// изменить фото в /schedule(графік)
 bot.on('photo', (msg) => {
     if (msg.caption === '/setschedule') {
         setschedule(bot, msg);
     }
 });
 
+// изменить время восстановления электроэнергии
+bot.onText(/\/restore (.+)/, (msg, match) => {
+    setRestore(bot, msg, match);
+});
+
+// отправить сообщение юзерам /message
 bot.onText(/\/message (.+)/, (msg, match) => {
     sendMessage(bot, msg, match);
 });
 
+// fallback
 bot.on('message', async (msg) => {
     if (!msg.text) return;
 
@@ -77,18 +79,12 @@ bot.on('message', async (msg) => {
 
     await bot.sendMessage(
         msg.chat.id,
-        `❓ Я не розумію цю команду.
-
-Скористайтесь кнопками нижче або командами:
-• /light — перевірити, чи є світло
-• /schedule — переглянути графік відключень
-
-Або скористайтесь кнопками нижче ⬇️`,
+        fallbackText(),
         mainKeyboard
     );
 });
 
-
+// Mini express server //
 const app = express();
 const PORT = 3000;
 

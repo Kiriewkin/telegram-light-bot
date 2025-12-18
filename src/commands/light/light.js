@@ -1,4 +1,4 @@
-import { Status } from '../models/Status.js';
+import { Status } from '../../models/Status.js';
 
 export async function light(bot, msg) {
     const status = await Status.findOne();
