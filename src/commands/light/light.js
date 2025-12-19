@@ -9,7 +9,7 @@ export async function light(bot, msg) {
     }
 
     const text = status.light
-        ? '✅ Світло є'
+        ? `✅ Світло є\n\n🕒 З ${status.last_change}`
         : `❌ Світла нема з ${status.last_change}\n\n⚡️ Орієнтовне відновлення: ${status.restore_time}`;
 
     await bot.sendMessage(msg.chat.id, text);
