@@ -52,7 +52,7 @@ export async function setlight(bot, msg, match) {
 
     const text = status.light
         ? `✅ Світло зʼявилось\n\n🕒 ${status.last_change}\n👤 Змінив: ${adminName}`
-        : `❌ Світла нема з ${status.last_change}\n\n⚡️ Орієнтовне відновлення: ${status.restore_time}\n👤 Змінив: ${adminName}`;
+        : `❌ Світла немає з ${status.last_change}\n\n⚡️ Орієнтовне відновлення: ${status.restore_time}\n👤 Змінив: ${adminName}`;
 
     const result = await broadcast(bot, msg.chat.id, text);
 

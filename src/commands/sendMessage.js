@@ -1,6 +1,8 @@
 import { isAdmin } from '../utils/isAdmin.js';
 import { User } from '../models/User.js';
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function sendMessage(bot, msg, match) {
     // 🔐 Проверка админа
     if (!(await isAdmin(msg.from.id))) {
@@ -33,6 +35,9 @@ export async function sendMessage(bot, msg, match) {
         } catch (e) {
             // користувач міг заблокувати бота — ігноруємо
         }
+
+        // невелика затримка між повідомленнями
+        await sleep(30);
     }
 
     await bot.sendMessage(

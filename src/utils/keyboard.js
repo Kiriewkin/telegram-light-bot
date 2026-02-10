@@ -12,6 +12,7 @@ export const adminKeyboard = {
     inline_keyboard: [
       [{ text: '💡 Світло: увімкнено', callback_data: 'light_on' }],
       [{ text: '❌ Світло: вимкнено', callback_data: 'light_off' }],
+      [{ text: '🤫 Тихий режим світла', callback_data: 'silent_light' }],
       [{ text: '⚡️ Змінити час відновлення', callback_data: 'restore_time' }],
       [{ text: '📅 Оновити графік', callback_data: 'update_schedule' }],
       [{ text: '📣 Надіслати повідомлення', callback_data: 'broadcast' }],
