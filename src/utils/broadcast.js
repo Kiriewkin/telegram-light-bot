@@ -1,5 +1,7 @@
 import { User } from '../models/User.js';
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function broadcast(bot, adminChatId, text) {
     // 🧪 DEV — отправляем ТОЛЬКО админу
     if (process.env.APP_MODE === 'dev') {
@@ -18,7 +20,12 @@ export async function broadcast(bot, adminChatId, text) {
         try {
             await bot.sendMessage(user.chatId, text);
             success++;
-        } catch {}
+        } catch {
+            // користувач міг заблокувати бота — ігноруємо
+        }
+
+        // невелика затримка, щоб не вдаритися в ліміти Telegram
+        await sleep(30);
     }
 
     return { sent: success, total: users.length };

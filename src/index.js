@@ -11,6 +11,7 @@ import { adminKeyboard, mainKeyboard } from './utils/keyboard.js';
 import { isAdmin, isSuperAdmin } from './utils/isAdmin.js';
 import { Admin } from './models/Admin.js';
 import { AdminState } from './models/AdminState.js';
+import { formatKiev } from './utils/formatKiev.js';
 
 const bot = new TelegramBot(TOKEN, { polling: true });
 
@@ -75,68 +76,118 @@ bot.onText(/\/admin/, async (msg) => {
 });
 
 bot.on('callback_query', async (query) => {
-    const chatId = query.message.chat.id;
-    const adminId = query.from.id; // саме користувач, який натиснув кнопку
+    // ✅ 1. Сразу отвечаем на callback, чтобы убрать "часик"
+    bot.answerCallbackQuery(query.id).catch((err) => {
+        // игнорируем только "query is too old / invalid", остальные логируем
+        if (
+            !(
+                err?.code === 'ETELEGRAM' &&
+                /query is too old|query ID is invalid/i.test(err.message || '')
+            )
+        ) {
+            console.error('Error answering callback (initial):', err);
+        }
+    });
 
-    if (!(await isAdmin(query.from.id))) {
-        return bot.answerCallbackQuery(query.id, {
-            text: '⛔ Немає доступу'
-        });
+    try {
+        const chatId = query.message.chat.id;
+        const adminId = String(query.from.id); // саме користувач, який натиснув кнопку
+
+        if (!(await isAdmin(adminId))) {
+            // опционально можно показать алерт или просто сообщение
+            await bot.sendMessage(chatId, '⛔ Немає доступу');
+            return;
+        }
+
+        switch (query.data) {
+            case 'light_on': {
+                // ✅ не блокируем обработчик — запускаем "в фоне"
+                setlight(bot, { chat: { id: chatId }, from: query.from }, { 1: 'on' })
+                    .catch(err => console.error('setlight on error:', err));
+                break;
+            }
+
+            case 'light_off': {
+                setlight(bot, { chat: { id: chatId }, from: query.from }, { 1: 'off' })
+                    .catch(err => console.error('setlight off error:', err));
+                break;
+            }
+
+            case 'restore_time':
+                await AdminState.findOneAndUpdate(
+                    { telegramId: adminId },
+                    { action: 'restore_time' },
+                    { upsert: true }
+                );
+                await bot.sendMessage(chatId, '✍️ Напишіть новий час відновлення:');
+                break;
+
+            case 'broadcast':
+                await AdminState.findOneAndUpdate(
+                    { telegramId: adminId },
+                    { action: 'broadcast' },
+                    { upsert: true }
+                );
+                await bot.sendMessage(chatId, '✍️ Введіть текст для розсилки:');
+                break;
+
+            case 'update_schedule':
+                await AdminState.findOneAndUpdate(
+                    { telegramId: adminId },
+                    { action: 'update_schedule' },
+                    { upsert: true }
+                );
+                await bot.sendMessage(chatId, '📸 Надішліть фото з новим графіком:');
+                break;
+
+            case 'help':
+                await bot.sendMessage(chatId, helpText());
+                break;
+
+            case 'silent_light': {
+                await bot.sendMessage(chatId, '🤫 Оберіть режим для тихої зміни світла:', {
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{ text: '💡 Світло: увімкнено', callback_data: 'silent_light_on' }],
+                            [{ text: '❌ Світло: вимкнено', callback_data: 'silent_light_off' }],
+                        ]
+                    }
+                });
+                break;
+            }
+
+            case 'silent_light_on': {
+                await AdminState.findOneAndUpdate(
+                    { telegramId: adminId },
+                    { action: 'silent_light_on' },
+                    { upsert: true }
+                );
+                await bot.sendMessage(
+                    chatId,
+                    '✍️ Введіть, будь ласка, час коли зʼявилось світло (наприклад: "10:30" або "09.02.2026 10:30")'
+                );
+                break;
+            }
+
+            case 'silent_light_off': {
+                await AdminState.findOneAndUpdate(
+                    { telegramId: adminId },
+                    { action: 'silent_light_off' },
+                    { upsert: true }
+                );
+                await bot.sendMessage(
+                    chatId,
+                    '✍️ Введіть, будь ласка, час коли зникло світло (наприклад: "08:15" або "09.02.2026 08:15")'
+                );
+                break;
+            }
+
+            default:
+                break;
+        }
+    } catch (err) {
+        console.error('Error in callback_query handler:', err);
     }
-
-    switch (query.data) {
-        case 'light_on':
-            await setlight(bot, { chat: { id: chatId }, from: query.from }, { 1: 'on' });
-            break;
-
-        case 'light_off':
-            await setlight(bot, { chat: { id: chatId }, from: query.from }, { 1: 'off' });
-            break;
-
-        case 'restore_time':
-            await AdminState.findOneAndUpdate(
-                { telegramId: adminId },
-                { action: 'restore_time' },
-                { upsert: true }
-            );
-
-            await bot.sendMessage(
-                chatId,
-                '✍️ Напишіть новий час відновлення:'
-            );
-            break;
-
-        case 'broadcast':
-            await AdminState.findOneAndUpdate(
-                { telegramId: adminId },
-                { action: 'broadcast' },
-                { upsert: true }
-            );
-
-            await bot.sendMessage(
-                chatId,
-                '✍️ Введіть текст для розсилки:'
-            );
-            break;
-
-        case 'update_schedule':
-            await AdminState.findOneAndUpdate(
-                { telegramId: adminId },
-                { action: 'update_schedule' },
-                { upsert: true }
-            );
-            await bot.sendMessage(chatId, '📸 Надішліть фото з новим графіком:');
-            break;
-
-        case 'help':
-            await bot.sendMessage(chatId, helpText());
-            break;
-
-        default:
-            break;
-    }
-
-    await bot.answerCallbackQuery(query.id);
 });
 
 // добавление админов
@@ -192,6 +243,35 @@ bot.on('message', async (msg) => {
 
             if (state.action === 'update_schedule') {
                 await setschedule(bot, msg);
+            }
+
+            if (state.action === 'silent_light_on' || state.action === 'silent_light_off') {
+                const isOn = state.action === 'silent_light_on';
+                const statusTextTime = msg.text?.trim();
+
+                let status = await Status.findOne();
+                if (!status) {
+                    status = new Status({ name: 'ЖК' });
+                }
+
+                status.light = isOn;
+                // час зміни беремо з вводу адміна
+                if (statusTextTime) {
+                    status.last_change = statusTextTime;
+                }
+
+                // якщо увімкнули світло — скидаємо restore_time
+                if (isOn) {
+                    status.restore_time = '—';
+                }
+
+                status.updated = formatKiev();
+                await status.save();
+
+                await bot.sendMessage(
+                    msg.chat.id,
+                    `✅ Статус світла оновлено в тихому режимі (${isOn ? 'увімкнено' : 'вимкнено'}) без розсилки.`
+                );
             }
 
             await AdminState.deleteOne({ telegramId: String(msg.from.id) });
