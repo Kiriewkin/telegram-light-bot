@@ -13,6 +13,8 @@ import { Admin } from './models/Admin.js';
 import { AdminState } from './models/AdminState.js';
 import { formatKiev } from './utils/formatKiev.js';
 
+const ADMIN_STATE_TTL_MS = 15 * 60 * 1000; // 15 хвилин на завершення дії
+
 const bot = new TelegramBot(TOKEN, { polling: true });
 
 connectToDatabase();
@@ -116,28 +118,46 @@ bot.on('callback_query', async (query) => {
             case 'restore_time':
                 await AdminState.findOneAndUpdate(
                     { telegramId: adminId },
-                    { action: 'restore_time' },
+                    { action: 'restore_time', createdAt: new Date() },
                     { upsert: true }
                 );
-                await bot.sendMessage(chatId, '✍️ Напишіть новий час відновлення:');
+                await bot.sendMessage(chatId, '✍️ Напишіть новий час відновлення:', {
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{ text: '❌ Скасувати дію', callback_data: 'cancel_state' }],
+                        ]
+                    }
+                });
                 break;
 
             case 'broadcast':
                 await AdminState.findOneAndUpdate(
                     { telegramId: adminId },
-                    { action: 'broadcast' },
+                    { action: 'broadcast', createdAt: new Date() },
                     { upsert: true }
                 );
-                await bot.sendMessage(chatId, '✍️ Введіть текст для розсилки:');
+                await bot.sendMessage(chatId, '✍️ Введіть текст для розсилки:', {
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{ text: '❌ Скасувати дію', callback_data: 'cancel_state' }],
+                        ]
+                    }
+                });
                 break;
 
             case 'update_schedule':
                 await AdminState.findOneAndUpdate(
                     { telegramId: adminId },
-                    { action: 'update_schedule' },
+                    { action: 'update_schedule', createdAt: new Date() },
                     { upsert: true }
                 );
-                await bot.sendMessage(chatId, '📸 Надішліть фото з новим графіком:');
+                await bot.sendMessage(chatId, '📸 Надішліть фото з новим графіком:', {
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{ text: '❌ Скасувати дію', callback_data: 'cancel_state' }],
+                        ]
+                    }
+                });
                 break;
 
             case 'help':
@@ -159,12 +179,19 @@ bot.on('callback_query', async (query) => {
             case 'silent_light_on': {
                 await AdminState.findOneAndUpdate(
                     { telegramId: adminId },
-                    { action: 'silent_light_on' },
+                    { action: 'silent_light_on', createdAt: new Date() },
                     { upsert: true }
                 );
                 await bot.sendMessage(
                     chatId,
-                    '✍️ Введіть, будь ласка, час коли зʼявилось світло (наприклад: "10:30" або "09.02.2026 10:30")'
+                    '✍️ Введіть, будь ласка, час коли зʼявилось світло (наприклад: "10:30" або "09.02.2026 10:30")',
+                    {
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{ text: '❌ Скасувати дію', callback_data: 'cancel_state' }],
+                            ]
+                        }
+                    }
                 );
                 break;
             }
@@ -172,13 +199,26 @@ bot.on('callback_query', async (query) => {
             case 'silent_light_off': {
                 await AdminState.findOneAndUpdate(
                     { telegramId: adminId },
-                    { action: 'silent_light_off' },
+                    { action: 'silent_light_off', createdAt: new Date() },
                     { upsert: true }
                 );
                 await bot.sendMessage(
                     chatId,
-                    '✍️ Введіть, будь ласка, час коли зникло світло (наприклад: "08:15" або "09.02.2026 08:15")'
+                    '✍️ Введіть, будь ласка, час коли зникло світло (наприклад: "08:15" або "09.02.2026 08:15")',
+                    {
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{ text: '❌ Скасувати дію', callback_data: 'cancel_state' }],
+                            ]
+                        }
+                    }
                 );
+                break;
+            }
+
+            case 'cancel_state': {
+                await AdminState.deleteOne({ telegramId: adminId });
+                await bot.sendMessage(chatId, '❌ Поточну дію скасовано.');
                 break;
             }
 
@@ -233,6 +273,17 @@ bot.on('message', async (msg) => {
         });
 
         if (state) {
+            // перевірка протухання стану
+            const createdAt = state.createdAt ? state.createdAt.getTime() : null;
+            if (createdAt && Date.now() - createdAt > ADMIN_STATE_TTL_MS) {
+                await AdminState.deleteOne({ telegramId: String(msg.from.id) });
+                await bot.sendMessage(
+                    msg.chat.id,
+                    '⏱ Час на виконання попередньої адмін‑дії вичерпано. Почніть ще раз з меню /admin.'
+                );
+                return;
+            }
+
             if (state.action === 'restore_time') {
                 await setRestore(bot, msg, { 1: msg.text });
             }
